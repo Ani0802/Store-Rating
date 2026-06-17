@@ -1,0 +1,52 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  address   String
+  role      String    // "ADMIN" | "USER" | "STORE_OWNER"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // Relations
+  store     Store?    @relation("StoreOwner")
+  ratings   Rating[]  @relation("UserRatings")
+}
+
+model Store {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  address   String
+  ownerId   String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  owner     User      @relation("StoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  ratings   Rating[]  @relation("StoreRatings")
+}
+
+model Rating {
+  id        String    @id @default(uuid())
+  score     Int       // 1 to 5
+  userId    String
+  storeId   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  user      User      @relation("UserRatings", fields: [userId], references: [id], onDelete: Cascade)
+  store     Store     @relation("StoreRatings", fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeId]) // Only 1 rating per user per store
+}
